@@ -48,10 +48,9 @@ All dependencies are automatically managed through the `pyproject.toml` file.
 
 To install the environment, run:
 
-```bash
 poetry install
 poetry shell
 
-## Credits
+##  Credits
 
 All the credits to [Gabriel Salles do Amaral](https://www.linkedin.com/in/gabriel-salles-amaral/)
