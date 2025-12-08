@@ -1,4 +1,4 @@
-# %% Importando os pacotes necessários
+# %% Importing the necessary packages
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -8,126 +8,112 @@ from factor_analyzer import FactorAnalyzer
 from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity
 from sklearn.preprocessing import StandardScaler
 
-# %% Importando o banco de dados
+# %% Importing the dataset
 dataset = pd.read_csv("dataset/airline_passenger_satisfaction.csv", sep=",")
 dataset.head()
 
-# %% Informações gerais sobre o DataFrame
+# %% General information about the DataFrame
 dataset.shape
 
 # %% Analyzing descriptive statistics
-
 dataset.describe()
 
 # %% Checking if that there are no non-null values in the data 
-
 dataset.info()
 
 dataset.isnull().sum()
 
 dataset.isna().sum()
 
-# %% Removendo os valores nulos do dataset
+# %% Removing null values from the dataset
 dataset.dropna(inplace=True)
 
-# %% Removendo colunas categóricas do dataset
-# Como o objetivo desse projeto é analisar o método PCA, deve-se ter apenas colunas numéricas.
+# %% Removing categorical columns from the dataset
+# Since the goal of this project is to analyze the PCA method, we should keep only numerical columns.
 
-# Mantém apenas colunas numéricas (int ou float)
+# Keep only numerical columns (int or float)
 dataset_pca = dataset.select_dtypes(include=['int64', 'float64'])
-dataset_pca.head()
+dataset_pca.head()  # Preview the first rows
 
-
-# Deve-se retirar a coluna ID também
+# Remove the ID column as well
 dataset_pca.drop(columns=["ID"], inplace=True)
-dataset_pca.head()
-dataset_pca.dtypes
+dataset_pca.head()  # Preview again after dropping the ID column
+dataset_pca.dtypes   # Check the data types of the remaining columns
 
-# %% Analisar correlação entre variáveis
+# %% Analyzing correlation between variables
 corr = dataset_pca.corr()
 
-# Plotando 
+# Create the figure
+plt.figure(figsize=(18,12), dpi=600) 
 
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-# Cria a figura
-plt.figure(figsize=(18,12), dpi=600)  # Tamanho 12x8 polegadas e resolução 600 dpi
-
-# Cria o heatmap
+# Create the heatmap
 sns.heatmap(
-    corr,                  # Matriz de correlação
-    cmap='Blues',          # Mapa de cores (tons de azul)
-    vmax=1,                # Valor máximo da escala de cores
-    vmin=-1,               # Valor mínimo da escala de cores
-    center=0,              # Ponto central da escala
-    square=True,           # Células quadradas
-    linewidths=.5,         # Largura das linhas que separam as células
-    annot=True,            # Escreve os valores dentro das células
-    fmt='.2f',             # Formato dos números (2 casas decimais)
-    annot_kws={'size':8}, # Tamanho da fonte dos números dentro das células
-    cbar_kws={"shrink":0.50} # Reduz o tamanho da barra de cores
+    corr,                  # Correlation matrix
+    cmap='Blues',          # Color map (shades of blue)
+    vmax=1,                # Maximum value for color scale
+    vmin=-1,               # Minimum value for color scale
+    center=0,              # Central value of the scale
+    square=True,           # Square cells
+    linewidths=.5,         # Width of lines separating cells
+    annot=True,            # Write values inside the cells
+    fmt='.2f',             # Format numbers (2 decimal places)
+    annot_kws={'size':8},  # Font size of numbers inside cells
+    cbar_kws={"shrink":0.50}  # Shrink the color bar
 )
 
-# Adiciona título e ajusta layout
-plt.title('Matriz de Correlações', fontsize=14)  # Título do gráfico
-plt.tight_layout()                               # Ajusta layout para não cortar nada
-plt.tick_params(labelsize=10)                    # Tamanho das labels dos eixos
+# Add title and adjust layout
+plt.title('Correlation Matrix', fontsize=14)  # Graph title
+plt.tight_layout()                             # Adjust layout so nothing is cut
+plt.tick_params(labelsize=10)                  # Size of axis labels
 
-# Mostra o gráfico
+# Show the plot
 plt.show()
 
-
-# %% Teste de esfericidade de Bartlett
-# %% Teste de Esfericidade de Bartlett
-# Hipótese nula (H0): A matriz de correlação é igual à matriz identidade
-#                    → as variáveis NÃO estão correlacionadas
-# Hipótese alternativa (H1): A matriz de correlação NÃO é a identidade
-#                            → as variáveis estão correlacionadas
+# %% Bartlett's Test of Sphericity
+# Null hypothesis (H0): The correlation matrix is equal to the identity matrix
+#                        → variables are NOT correlated
+# Alternative hypothesis (H1): The correlation matrix is NOT the identity
+#                               → variables are correlated
 
 bartlett, p_value = calculate_bartlett_sphericity(dataset_pca)
 
-print(f'Qui² Bartlett: {round(bartlett,2)}')
-print(f'p-valor: {round(p_value,4)}')
+print(f'Bartlett\'s Chi-square: {round(bartlett, 2)}')
+print(f'p-value: {round(p_value, 4)}')
 
-# %% Conclusão baseada no p-valor
+# %% Conclusion based on the p-value
 if p_value < 0.05:
-    print("Conclusão: p-valor < 0.05 → rejeita H0 → as variáveis estão correlacionadas. Faz sentido aplicar PCA.")
+    print("Conclusion: p-value < 0.05 → reject H0 → variables are correlated. Applying PCA makes sense.")
 else:
-    print("Conclusão: p-valor ≥ 0.05 → não rejeita H0 → as variáveis NÃO estão correlacionadas. PCA pode não ser apropriado.")
+    print("Conclusion: p-value ≥ 0.05 → do not reject H0 → variables are NOT correlated. PCA may not be appropriate.")
 
-# %% Método PCA - Padronizando as variáveis
-# Criar o scaler
+# %% PCA Method - Standardizing the variables
+# Create the scaler
 scaler = StandardScaler()
 
-# Ajustar e transformar os dados numéricos
+# Fit and transform the numerical data
 dataset_pca_scaled = scaler.fit_transform(dataset_pca)
 
-# Converte para DataFrame novamente, mantendo os nomes das colunas
+# Convert back to DataFrame, keeping the column names
 dataset_pca_scaled = pd.DataFrame(dataset_pca_scaled, columns=dataset_pca.columns)
 
-# Agora dá pra usar head(), describe(), etc.
+# Display the first rows
 dataset_pca_scaled.head()
 
-# %%#%% Definindo a PCA (procedimento inicial com todos os fatores possíveis)
+# %% Defining PCA (initial procedure with all possible factors)
+# Get the number of variables to start the procedure
+n_columns = dataset_pca_scaled.shape[1]
 
-# Obtendo o número de variáveias para inciar o procedimento 
-n_colunas = dataset_pca_scaled.shape[1]
+fa = FactorAnalyzer(n_factors=n_columns, method='principal', rotation=None).fit(dataset_pca_scaled)
 
-fa = FactorAnalyzer(n_factors=n_colunas, method='principal', rotation=None).fit(dataset_pca_scaled)
+# %% Obtaining eigenvalues resulting from the FactorAnalyzer function
+eigenvalues = fa.get_eigenvalues()[0]
 
-#%% Obtendo os eigenvalues (autovalores): resultantes da função FactorAnalyzer
+print(eigenvalues)
 
-autovalores = fa.get_eigenvalues()[0]
+# Sum of eigenvalues – equal to the number of variables
+round(eigenvalues.sum(), 2)
 
-print(autovalores) 
-
-# Soma dos autovalores - é igual ao nº de variáveis
-
-round(autovalores.sum(), 2) 
-
-#%% Autovalores, variâncias e variâncias acumuladas
-
+#%% Eigenvalues, variances, and cumulative variances
 autovalores_fatores = fa.get_factor_variance()
 
 tabela_eigen = pd.DataFrame(autovalores_fatores)
@@ -137,101 +123,88 @@ tabela_eigen = tabela_eigen.T
 
 print(tabela_eigen)
 
-#%% Gráfico da variância acumulada dos componentes principais
-
+#%% Cumulative variance plot of the principal components
 plt.figure(figsize=(18,12), dpi=600)
 ax = sns.barplot(x=tabela_eigen.index, y='Variância', hue=tabela_eigen.index, palette='rocket', data=tabela_eigen)
 for container in ax.containers:
     labels = [f"{v*100:.2f}%" for v in container.datavalues]
     ax.bar_label(container, labels=labels)
 ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, pos: f"{x*100:.0f}%"))
-plt.title("Fatores Extraídos", fontsize=16)
-plt.xlabel(f"{tabela_eigen.shape[0]} fatores que explicam {round(tabela_eigen['Variância'].sum()*100,2)}% da variância", fontsize=8)
-plt.ylabel("Variância explicada", fontsize=8)
+plt.title("Extracted Factors", fontsize=16)
+plt.xlabel(f"{tabela_eigen.shape[0]} factors explaining {round(tabela_eigen['Variância'].sum()*100,2)}% of the variance", fontsize=8)
+plt.ylabel("Explained Variance", fontsize=8)
 plt.show()
 
-#%% Determinando as cargas fatoriais
+#%% Determining factor loadings
+factor_loadings = fa.loadings_
 
-# Note que não há alterações nas cargas fatoriais nos 2 fatores!
+loadings_table = pd.DataFrame(factor_loadings)
+loadings_table.columns = [f"Factor {i+1}" for i, v in enumerate(loadings_table.columns)]
+loadings_table.index = dataset_pca_scaled.columns
 
-cargas_fatoriais = fa.loadings_
+print(loadings_table)
 
-tabela_cargas = pd.DataFrame(cargas_fatoriais)
-tabela_cargas.columns = [f"Fator {i+1}" for i, v in enumerate(tabela_cargas.columns)]
-tabela_cargas.index = dataset_pca_scaled.columns
+#%% Kaiser Criterion - automatically select factors with eigenvalue > 1
+# Get the eigenvalues
+eigenvalues = fa.get_eigenvalues()[0]
 
-print(tabela_cargas)
+# Select only factors with eigenvalue > 1
+kaiser_factors = np.sum(eigenvalues > 1)
+print(f"Number of factors to retain according to the Kaiser Criterion: {kaiser_factors}")
 
-#%% Critério de Kaiser - selecionar automaticamente fatores com autovalor > 1
+# %% Re-running PCA with the selected parameters
+fa_kaiser = FactorAnalyzer(n_factors=kaiser_factors, method='principal', rotation=None).fit(dataset_pca_scaled)
 
-# Obter os autovalores
-autovalores = fa.get_eigenvalues()[0]
+#%% Eigenvalues, variances, and cumulative variances for the 2 factors
 
-# Selecionar apenas os fatores com autovalor > 1
-fatores_kaiser = np.sum(autovalores > 1)
-print(f"Número de fatores a manter pelo Critério de Kaiser: {fatores_kaiser}")
+# Note: values themselves don't change, only the selection of factors occurs
 
-# %% Parametrizando o PCA novamente
-fa_kaiser = FactorAnalyzer(n_factors=fatores_kaiser, method='principal', rotation=None).fit(dataset_pca_scaled)
+factor_eigenvalues = fa_kaiser.get_factor_variance()
 
-#%% Autovalores, variâncias e variâncias acumuladas de 2 fatores
+eigen_table = pd.DataFrame(factor_eigenvalues)
+eigen_table.columns = [f"Factor {i+1}" for i, v in enumerate(eigen_table.columns)]
+eigen_table.index = ['Eigenvalue', 'Variance', 'Cumulative Variance']
+eigen_table = eigen_table.T
 
-# Note que não há alterações nos valores, apenas ocorre a seleção dos fatores
+print(eigen_table)
 
-autovalores_fatores = fa_kaiser.get_factor_variance()
+#%% Determining factor loadings
+factor_loadings = fa_kaiser.loadings_
 
-tabela_eigen = pd.DataFrame(autovalores_fatores)
-tabela_eigen.columns = [f"Fator {i+1}" for i, v in enumerate(tabela_eigen.columns)]
-tabela_eigen.index = ['Autovalor','Variância', 'Variância Acumulada']
-tabela_eigen = tabela_eigen.T
+loadings_table = pd.DataFrame(factor_loadings)
+loadings_table.columns = [f"Factor {i+1}" for i, v in enumerate(loadings_table.columns)]
+loadings_table.index = dataset_pca_scaled.columns
 
-print(tabela_eigen)
+print(loadings_table)
 
-#%% Determinando as cargas fatoriais
+#%% Determining the communalities
+communalities = fa_kaiser.get_communalities()
 
-# Note que não há alterações nas cargas fatoriais nos 2 fatores!
+communalities_table = pd.DataFrame(communalities)
+communalities_table.columns = ['Communalities']
+communalities_table.index = dataset_pca_scaled.columns
 
-cargas_fatoriais = fa_kaiser.loadings_
+print(communalities_table)
 
-tabela_cargas = pd.DataFrame(cargas_fatoriais)
-tabela_cargas.columns = [f"Fator {i+1}" for i, v in enumerate(tabela_cargas.columns)]
-tabela_cargas.index = dataset_pca_scaled.columns
+# Variables with higher communalities are well represented by the extracted factors,
+# meaning the factors retain more information from these variables.
 
-print(tabela_cargas)
-
-#%% Determinando as comunalidades
-
-comunalidades = fa_kaiser.get_communalities()
-
-tabela_comunalidades = pd.DataFrame(comunalidades)
-tabela_comunalidades.columns = ['Comunalidades']
-tabela_comunalidades.index = dataset_pca_scaled.columns
-
-print(tabela_comunalidades)
-
-# Variáveis com comunalidade mais alta são bem representadas pelos fatores extraídos, ou seja, os fatores retêm mais informação dessas variáveis.
-#%% Identificando os scores fatoriais
-
-# Não há mudanças nos scores fatoriais!
-
-#%% Scores fatoriais com fatores selecionados pelo Critério de Kaiser
-
-# Usar .transform() para obter os scores das observações
+#%% Factor scores with factors selected using the Kaiser Criterion
+# Use .transform() to get the scores for each observation
 scores_kaiser = fa_kaiser.transform(dataset_pca_scaled)
 
-# Converter para DataFrame
-tabela_scores = pd.DataFrame(
+# Convert to DataFrame
+scores_table = pd.DataFrame(
     scores_kaiser,
-    columns=[f"Fator {i+1}" for i in range(scores_kaiser.shape[1])],
-    index=dataset_pca_scaled.index  # mantém índices das observações
+    columns=[f"Factor {i+1}" for i in range(scores_kaiser.shape[1])],
+    index=dataset_pca_scaled.index  # keep the observation indices
 )
 
-# Visualizar os primeiros scores
-print(tabela_scores.head())
+# View the first factor scores
+print(scores_table.head())
 
+# %% Conclusion
+# After applying PCA, the 18 original variables were reduced to 5 factors,
+# which explain 64.55% of the total variance, retaining most of the information from the dataset.
 
-# %% Conclusão 
-
-# Após a aplicação do PCA, as 18 variáveis originais foram reduzidas para 5 fatores, que explicam 64,55% da variância total, mantendo boa parte da informação do dataset.
-
-# %% Fim
+# %% End
